@@ -3,6 +3,7 @@ import math
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
+import platform
 
 import torch
 import torch.utils.data as data
@@ -80,7 +81,12 @@ class SerializeArray(data.Dataset):
 
         # use mmap as intermediate sharing, else variable will be duplicated
         # accross torch worker => OOM error, open in read only mode
-        self.image = np.load(mmap_array_path, mmap_mode="r")
+        if platform.system() == 'Windows':
+            # At least on Windows, mmap_mode="r" can be crashes apparently because the file gets locked
+            # https://stackoverflow.com/questions/78215019/np-save-and-np-load-with-memmap-mode-returned-oserror
+            self.image = np.load(mmap_array_path)
+        else:
+            self.image = np.load(mmap_array_path, mmap_mode="r")
 
         self.patch_info_list = patch_info_list
         self.preproc = preproc
