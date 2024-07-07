@@ -116,7 +116,11 @@ class OpenSlideHandler(FileHandler):
         metadata = {}
 
         wsi_properties = self.file_ptr.properties
-        level_0_magnification = wsi_properties[openslide.PROPERTY_NAME_OBJECTIVE_POWER]
+        if openslide.PROPERTY_NAME_OBJECTIVE_POWER in wsi_properties:
+            level_0_magnification = wsi_properties[openslide.PROPERTY_NAME_OBJECTIVE_POWER]
+        else:
+            level_0_magnification = '40'
+
         level_0_magnification = float(level_0_magnification)
 
         downsample_level = self.file_ptr.level_downsamples
