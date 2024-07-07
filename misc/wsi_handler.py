@@ -126,9 +126,19 @@ class OpenSlideHandler(FileHandler):
         downsample_level = self.file_ptr.level_downsamples
         magnification_level = [level_0_magnification / lv for lv in downsample_level]
 
+        if openslide.PROPERTY_NAME_MPP_X in wsi_properties:
+            mpp_x = wsi_properties[openslide.PROPERTY_NAME_MPP_X]
+        else:
+            mpp_x = 0.25
+
+        if openslide.PROPERTY_NAME_MPP_Y in wsi_properties:
+            mpp_y = wsi_properties[openslide.PROPERTY_NAME_MPP_Y]
+        else:
+            mpp_y = 0.25
+
         mpp = [
-            wsi_properties[openslide.PROPERTY_NAME_MPP_X],
-            wsi_properties[openslide.PROPERTY_NAME_MPP_Y],
+            mpp_x,
+            mpp_y,
         ]
         mpp = np.array(mpp)
 
