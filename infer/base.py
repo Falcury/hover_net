@@ -14,8 +14,11 @@ import numpy as np
 import torch
 import torch.utils.data as data
 import tqdm
+import xml.etree.ElementTree as ET
+import cv2
 
 from run_utils.utils import convert_pytorch_checkpoint
+from misc.utils import log_info
 
 
 ####
@@ -76,6 +79,49 @@ class InferManager(object):
         module_lib = import_module("models.hovernet.post_proc")
         self.post_proc_func = getattr(module_lib, "process")
         return
+
+    def __save_xml(self, path, json_dict, type_info_dict, with_smooth_contours=True):
+
+        xml_template = "<ASAP_Annotations>\n<AnnotationGroups>"
+        def rgb_to_hex(class_color):
+            return '#%02x%02x%02x' % (class_color[0], class_color[1], class_color[2])
+        hex_color_dict = {key: rgb_to_hex(value[1]) for key, value in type_info_dict.items()}
+
+        for i, type_info in type_info_dict.items():
+            xml_template += f'\n\t<Group Color="{hex_color_dict[i]}" Name="{type_info[0]}" PartOfGroup="None"><Attributes/></Group>'
+
+        xml_template += "\n</AnnotationGroups>\n<Annotations>\n</Annotations></ASAP_Annotations>"
+
+        tree = ET.ElementTree(ET.fromstring(xml_template))
+        root = tree.getroot()
+        annotations = root.find("Annotations")
+
+        next_annot_index = 0
+
+        for key, nucleus in json_dict.items():
+            contour = nucleus["contour"]
+            if with_smooth_contours:
+                contour = cv2.approxPolyDP(np.array(contour, dtype=np.int32), 1,
+                                           closed=True)  # smooth contours to reduce the number of vertices
+
+            nucleus_type = int(nucleus["type"])
+            class_name = type_info_dict[nucleus_type][0]
+            class_color = hex_color_dict[nucleus_type]
+
+            Annotation = ET.SubElement(annotations, "Annotation", Name="Annotation " + str(next_annot_index),
+                                       Type="Polygon", PartOfGroup=class_name, Color=class_color)
+            next_annot_index += 1
+
+            Coordinates = ET.SubElement(Annotation, "Coordinates")
+            coordinate_no = 0
+            for coord in contour:
+                x = coord[0][0]
+                y = coord[0][1]
+                Coordinate = ET.SubElement(Coordinates, "Coordinate", Order=str(coordinate_no), X=str(x), Y=str(y))
+                coordinate_no += 1
+
+        tree.write(path)
+        # log_info(f"Saving... {path}")
 
     def __save_json(self, path, old_dict, mag=None):
         new_dict = {}

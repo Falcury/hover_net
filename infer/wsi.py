@@ -1,4 +1,5 @@
 import multiprocessing as mp
+import platform
 from concurrent.futures import FIRST_EXCEPTION, ProcessPoolExecutor, as_completed, wait
 from multiprocessing import Lock, Pool
 
@@ -704,7 +705,13 @@ class InferManager(base.InferManager):
             json_path = "%s/json/%s.json" % (output_dir, wsi_name)
         else:
             json_path = "%s/%s.json" % (output_dir, wsi_name)
-        self.__save_json(json_path, self.wsi_inst_info, mag=self.proc_mag)
+        new_dict = self.__save_json(json_path, self.wsi_inst_info, mag=self.proc_mag)
+
+        if self.save_mask or self.save_thumb:
+            xml_path = "%s/xml/%s.xml" % (output_dir, wsi_name)
+        else:
+            xml_path = "%s/%s.xml" % (output_dir, wsi_name)
+        self.__save_xml(xml_path, new_dict, self.type_info_dict, True)
         end = time.perf_counter()
         log_info("Save Time: {0}".format(end - start))
 
@@ -722,6 +729,8 @@ class InferManager(base.InferManager):
 
         if not os.path.exists(self.output_dir + "/json/"):
             rm_n_mkdir(self.output_dir + "/json/")
+        if not os.path.exists(self.output_dir + "/xml/"):
+            rm_n_mkdir(self.output_dir + "/xml/")
         if self.save_thumb:
             if not os.path.exists(self.output_dir + "/thumb/"):
                 rm_n_mkdir(self.output_dir + "/thumb/")
