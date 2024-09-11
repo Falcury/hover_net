@@ -515,7 +515,8 @@ class InferManager(base.InferManager):
         # * declare holder for output
         # create a memory-mapped .npy file with the predefined dimensions and dtype
         # TODO: dynamicalize this, retrieve from model?
-        out_ch = 3 if self.method["model_args"]["nr_types"] is None else 4
+        nr_types = self.method["model_args"]["nr_types"]
+        out_ch = 3 if nr_types is None else 4 + nr_types
         self.wsi_inst_info = {}
         # TODO: option to use entire RAM if users have too much available, would be faster than mmap
         self.wsi_inst_map = np.lib.format.open_memmap(

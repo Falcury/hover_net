@@ -108,7 +108,8 @@ def process(pred_map, nr_types=None, return_centroids=False):
     """
     if nr_types is not None:
         pred_type = pred_map[..., :1]
-        pred_inst = pred_map[..., 1:]
+        pred_inst = pred_map[..., 1:4]
+        pred_type_raw = pred_map[..., 4:]
         pred_type = pred_type.astype(np.int32)
     else:
         pred_inst = pred_map
@@ -156,6 +157,7 @@ def process(pred_map, nr_types=None, return_centroids=False):
                 "contour": inst_contour,
                 "type_prob": None,
                 "type": None,
+                "type_raw": None,
             }
 
     if nr_types is not None:
@@ -164,10 +166,13 @@ def process(pred_map, nr_types=None, return_centroids=False):
             rmin, cmin, rmax, cmax = (inst_info_dict[inst_id]["bbox"]).flatten()
             inst_map_crop = pred_inst[rmin:rmax, cmin:cmax]
             inst_type_crop = pred_type[rmin:rmax, cmin:cmax]
+            inst_type_raw_crop = pred_type_raw[rmin:rmax, cmin:cmax]
             inst_map_crop = (
                 inst_map_crop == inst_id
             )  # TODO: duplicated operation, may be expensive
             inst_type = inst_type_crop[inst_map_crop]
+            inst_type_raw = inst_type_raw_crop[inst_map_crop]
+            inst_type_raw_mean = np.mean(inst_type_raw, axis=0)
             type_list, type_pixels = np.unique(inst_type, return_counts=True)
             type_list = list(zip(type_list, type_pixels))
             type_list = sorted(type_list, key=lambda x: x[1], reverse=True)
@@ -179,6 +184,7 @@ def process(pred_map, nr_types=None, return_centroids=False):
             type_prob = type_dict[inst_type] / (np.sum(inst_map_crop) + 1.0e-6)
             inst_info_dict[inst_id]["type"] = int(inst_type)
             inst_info_dict[inst_id]["type_prob"] = float(type_prob)
+            inst_info_dict[inst_id]["type_raw"] = [float(x) for x in inst_type_raw_mean]
 
     # print('here')
     # ! WARNING: ID MAY NOT BE CONTIGUOUS
