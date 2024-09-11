@@ -19,6 +19,24 @@ class __AbstractDataset(object):
 
 
 ####
+class __MF(__AbstractDataset):
+    def load_img(self, path):
+        return cv2.cvtColor(cv2.imread(path), cv2.COLORBGR2RGB)
+
+    def load_ann(self, path, with_type=True):
+        ann_inst = sio.loadmat(path)["inst_map"]
+        ann_inst = ann_inst.astype("int32")
+        if with_type:
+            ann_type = sio.loadmat(path)['type_map']
+            ann_type = ann_type.astype("int32")
+            ann = np.dstack([ann_inst, ann_type])
+        else:
+            ann = np.expand_dims(ann_inst, -1)
+        ann = ann.astype("int32")
+        return ann
+
+
+####
 class __Kumar(__AbstractDataset):
     """Defines the Kumar dataset as originally introduced in:
 
@@ -102,6 +120,7 @@ def get_dataset(name):
         "kumar": lambda: __Kumar(),
         "cpm17": lambda: __CPM17(),
         "consep": lambda: __CoNSeP(),
+        "mf": lambda:__MF(),
     }
     if name.lower() in name_dict:
         return name_dict[name]()

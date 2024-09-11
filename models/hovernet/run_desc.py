@@ -209,9 +209,11 @@ def viz_step_output(raw_data, nr_types=None):
     true_hv, pred_hv = raw_data["hv"]
     if nr_types is not None:
         true_tp, pred_tp = raw_data["tp"]
+        
+    print(f"DEBUG: imgs.shape = {imgs.shape}, true_np.shape={true_np.shape}, pred_np.shape = {pred_np.shape}\n")
 
     aligned_shape = [list(imgs.shape), list(true_np.shape), list(pred_np.shape)]
-    aligned_shape = np.min(np.array(aligned_shape), axis=0)[1:3]
+    aligned_shape = np.min(np.array(aligned_shape, dtype=object), axis=0)[1:3]
 
     cmap = plt.get_cmap("jet")
 
